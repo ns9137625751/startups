@@ -56,6 +56,9 @@ Route::middleware(['auth', 'verified.otp'])->prefix('dashboard')->name('dashboar
         Route::put('/startups/{startup}',          [SuperAdminController::class, 'updateStartup'])->name('startups.update');
         Route::delete('/startups/{startup}',       [SuperAdminController::class, 'deleteStartup'])->name('startups.delete');
         Route::post('/startups/{startup}/approve', [SuperAdminController::class, 'approveStartup'])->name('startups.approve');
+        Route::get('/startups-export',             [SuperAdminController::class, 'exportStartups'])->name('startups.export');
+        Route::get('/startups-template',           [SuperAdminController::class, 'exportStartupsTemplate'])->name('startups.template');
+        Route::post('/startups-import',            [SuperAdminController::class, 'importStartups'])->name('startups.import');
         // Investor profiles management
         Route::get('/investors',                     [SuperAdminController::class, 'investorProfiles'])->name('investors');
         Route::get('/investors-search',              [SuperAdminController::class, 'investorSearch'])->name('investors.search');
@@ -64,12 +67,16 @@ Route::middleware(['auth', 'verified.otp'])->prefix('dashboard')->name('dashboar
         Route::put('/investors/{investor}',          [SuperAdminController::class, 'updateInvestor'])->name('investors.update');
         Route::delete('/investors/{investor}',       [SuperAdminController::class, 'deleteInvestor'])->name('investors.delete');
         Route::post('/investors/{investor}/approve', [SuperAdminController::class, 'approveInvestor'])->name('investors.approve');
+        Route::get('/investors-export',              [SuperAdminController::class, 'exportInvestors'])->name('investors.export');
+        Route::get('/investors-template',            [SuperAdminController::class, 'exportInvestorsTemplate'])->name('investors.template');
+        Route::post('/investors-import',             [SuperAdminController::class, 'importInvestors'])->name('investors.import');
     });
 
     // ── Startup ───────────────────────────────────────────────────────────────
     Route::middleware('role:startup')->prefix('startup')->name('startup.')->group(function () {
         Route::get('/',           [StartupController::class, 'index'])->name('index');
         Route::get('/investors',  [StartupController::class, 'browseInvestors'])->name('investors');
+        Route::get('/investors/{hash}', [StartupController::class, 'showInvestor'])->name('investors.show');
         Route::get('/incubators', [StartupController::class, 'browseIncubators'])->name('incubators');
         Route::get('/profile',    [StartupProfileController::class, 'show'])->name('profile');
         Route::post('/profile',   [StartupProfileController::class, 'store'])->name('profile.store');
@@ -78,7 +85,9 @@ Route::middleware(['auth', 'verified.otp'])->prefix('dashboard')->name('dashboar
     // ── Investor ──────────────────────────────────────────────────────────────
     Route::middleware('role:investor')->prefix('investor')->name('investor.')->group(function () {
         Route::get('/',        [InvestorController::class, 'index'])->name('index');
-        Route::get('/startups',[InvestorController::class, 'browseStartups'])->name('startups');
+        Route::get('/startups',       [InvestorController::class, 'browseStartups'])->name('startups');
+        Route::get('/startups/{hash}', [InvestorController::class, 'showStartups'])->name('startups.show');
+
         Route::get('/profile', [InvestorController::class, 'showProfile'])->name('profile');
         Route::post('/profile',[InvestorController::class, 'storeProfile'])->name('profile.store');
     });

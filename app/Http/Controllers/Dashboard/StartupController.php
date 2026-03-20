@@ -47,4 +47,14 @@ class StartupController extends Controller
             ->latest()->paginate(9)->withQueryString();
         return view('dashboard.startup.browse-incubators', compact('incubators', 'q'));
     }
+
+    public function showInvestor(string $hash)
+    {
+        $id = decrypt($hash);
+        $investor = InvestorProfile::findOrFail($id);
+        abort_unless($investor->can_approved, 404);
+        $investor->load('user');
+        $domainMap = Domain::pluck('name', 'id');
+        return view('dashboard.startup.show-investor', compact('investor', 'domainMap'));
+    }
 }

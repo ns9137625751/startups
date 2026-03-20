@@ -2,7 +2,13 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Exports\InvestorProfilesExport;
+use App\Exports\InvestorProfilesTemplateExport;
+use App\Exports\StartupProfilesExport;
+use App\Exports\StartupProfilesTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\InvestorProfilesImport;
+use App\Imports\StartupProfilesImport;
 use App\Models\Domain;
 use App\Models\InvestorProfile;
 use App\Models\RoleSetting;
@@ -10,6 +16,7 @@ use App\Models\StartupProfile;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SuperAdminController extends Controller
 {
@@ -33,13 +40,15 @@ class SuperAdminController extends Controller
 
     public function startupProfiles()
     {
-        return view('dashboard.super-admin.startups');
+        $domains = Domain::orderBy('name')->get();
+        return view('dashboard.super-admin.startups', compact('domains'));
     }
 
     public function startupSearch(Request $request)
     {
         $search  = $request->input('q', '');
         $filter  = $request->input('filter', 'all');
+        $domain  = $request->input('domain', '');
         $page    = max(1, (int) $request->input('page', 1));
         $perPage = 15;
 
@@ -47,6 +56,7 @@ class SuperAdminController extends Controller
             ->when($filter === 'pending',  fn($q) => $q->where('can_approved', 0))
             ->when($filter === 'approved', fn($q) => $q->where('can_approved', 1))
             ->when($filter === 'rejected', fn($q) => $q->where('can_approved', 2))
+            ->when($domain, fn($q) => $q->where('focus_areas', 'like', "%{$domain}%"))
             ->when($search, fn($q) => $q->where(function ($sub) use ($search) {
                 $sub->where('company_name',    'like', "%{$search}%")
                     ->orWhere('founder_name',   'like', "%{$search}%")
@@ -173,11 +183,38 @@ class SuperAdminController extends Controller
         return back()->with('success', "Startup marked as {$label}.");
     }
 
+    public function exportStartups()
+    {
+        return Excel::download(new StartupProfilesExport, 'startup-profiles-' . date('Y-m-d') . '.xlsx');
+    }
+
+    public function exportStartupsTemplate()
+    {
+        return Excel::download(new StartupProfilesTemplateExport, 'startup-profiles-template.xlsx');
+    }
+
+    public function importStartups(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        try {
+            Excel::import(new StartupProfilesImport, $request->file('file'));
+            return redirect()->route('dashboard.super-admin.startups')
+                ->with('success', 'Startup profiles imported successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.super-admin.startups')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
     // ── Investor Profiles ─────────────────────────────────────────────────────
 
     public function investorProfiles()
     {
-        return view('dashboard.super-admin.investors');
+        $domains = Domain::orderBy('name')->get();
+        return view('dashboard.super-admin.investors', compact('domains'));
     }
 
     public function investorSearch(Request $request)
@@ -187,10 +224,13 @@ class SuperAdminController extends Controller
         $page    = max(1, (int) $request->input('page', 1));
         $perPage = 15;
 
+        $domainId = $request->input('domain', '');
+
         $query = InvestorProfile::with('user')
             ->when($filter === 'pending',  fn($q) => $q->where('can_approved', 0))
             ->when($filter === 'approved', fn($q) => $q->where('can_approved', 1))
             ->when($filter === 'rejected', fn($q) => $q->where('can_approved', 2))
+            ->when($domainId, fn($q) => $q->whereJsonContains('investment_sectors', (int) $domainId))
             ->when($search, fn($q) => $q->where(function ($sub) use ($search) {
                 $sub->where('fund_name',           'like', "%{$search}%")
                     ->orWhere('fund_email',         'like', "%{$search}%")
@@ -299,6 +339,32 @@ class SuperAdminController extends Controller
         $investor->update(['can_approved' => $request->status]);
         $label = ['0' => 'Pending', '1' => 'Approved', '2' => 'Rejected'][$request->status];
         return back()->with('success', "Investor marked as {$label}.");
+    }
+
+    public function exportInvestors()
+    {
+        return Excel::download(new InvestorProfilesExport, 'investor-profiles-' . date('Y-m-d') . '.xlsx');
+    }
+
+    public function exportInvestorsTemplate()
+    {
+        return Excel::download(new InvestorProfilesTemplateExport, 'investor-profiles-template.xlsx');
+    }
+
+    public function importInvestors(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        try {
+            Excel::import(new InvestorProfilesImport, $request->file('file'));
+            return redirect()->route('dashboard.super-admin.investors')
+                ->with('success', 'Investor profiles imported successfully!');
+        } catch (\Exception $e) {
+            return redirect()->route('dashboard.super-admin.investors')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 
     // ── Roles & Users ─────────────────────────────────────────────────────────

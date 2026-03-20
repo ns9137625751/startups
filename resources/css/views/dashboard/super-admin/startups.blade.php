@@ -19,85 +19,42 @@
         </div>
     </div>
 
-    <div class="flex items-center gap-2 flex-wrap">
-        <!-- Filter tabs -->
-        @foreach(['all'=>'All','pending'=>'Pending','approved'=>'Approved','rejected'=>'Rejected'] as $val=>$label)
-        <button onclick="setFilter('{{ $val }}')" data-filter="{{ $val }}"
-           class="filter-tab px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
-           style="{{ $val === 'all' ? 'background:#1F3C88;color:#fff;border-color:#1F3C88;' : 'background:#fff;color:#6b7280;border-color:#e5e7eb;' }}">
-            {{ $label }}
-        </button>
-        @endforeach
-
-        <!-- Export -->
-        <a href="{{ route('dashboard.super-admin.startups.export') }}"
-           class="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1"
-           style="background:#f0fdf4;color:#16a34a;border-color:#bbf7d0;"
-           onmouseover="this.style.background='#16a34a';this.style.color='#fff'"
-           onmouseout="this.style.background='#f0fdf4';this.style.color='#16a34a'">
-            &#11123; Export Excel
-        </a>
-
-        <!-- Import trigger -->
-        <button onclick="document.getElementById('startup-import-modal').style.display='flex'"
-           class="px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1"
-           style="background:#eff6ff;color:#1F3C88;border-color:#bfdbfe;"
-           onmouseover="this.style.background='#1F3C88';this.style.color='#fff'"
-           onmouseout="this.style.background='#eff6ff';this.style.color='#1F3C88'">
-            &#11121; Import Excel
-        </button>
-    </div>
-</div>
-
-<!-- Import Modal -->
-<div id="startup-import-modal"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:50;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.15);">
-        <div class="flex items-center justify-between mb-5">
-            <h2 class="text-base font-extrabold" style="color:#0d1b2a;">Import Startup Profiles</h2>
-            <button onclick="document.getElementById('startup-import-modal').style.display='none'"
-                    style="background:none;border:none;font-size:20px;color:#9ca3af;cursor:pointer;">&#10005;</button>
-        </div>
-
-        <!-- Instructions -->
-        <div class="mb-4 p-3 rounded-lg text-xs font-semibold" style="background:#fffbeb;color:#92400e;border:1px solid #fde68a;">
-            <p class="font-extrabold mb-1">&#9888; Required columns in your Excel file:</p>
-            <p>founder_name, founder_email, founder_contact, company_name, startup_stage, state, city, team_size, focus_areas, product_description, problem_addressed, unique_idea, key_ip, market_size, competitors, business_model, dipp_number</p>
-            <p class="mt-1">Optional: founder_gender, founder_background, revenue_last_fy, total_revenue, capital_seeking, website, linkedin, etc.</p>
-        </div>
-
-        <div class="mb-4">
-            <a href="{{ route('dashboard.super-admin.startups.template') }}"
-               class="text-xs font-bold flex items-center gap-1"
-               style="color:#1F3C88;">
-                &#11123; Download Template
+    <div class="flex items-center gap-3">
+        <!-- Import/Export buttons -->
+        <div class="flex items-center gap-2">
+            <a href="{{ route('dashboard.super-admin.startups.export') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+               style="background:#f0fdf4;color:#16a34a;border-color:#16a34a;"
+               onmouseover="this.style.background='#16a34a';this.style.color='#fff'"
+               onmouseout="this.style.background='#f0fdf4';this.style.color='#16a34a'">
+                <i class="fas fa-download me-1"></i>Export Excel
             </a>
+            <a href="{{ route('dashboard.super-admin.startups.template') }}"
+               class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+               style="background:#fff7ed;color:#ea580c;border-color:#ea580c;"
+               onmouseover="this.style.background='#ea580c';this.style.color='#fff'"
+               onmouseout="this.style.background='#fff7ed';this.style.color='#ea580c'">
+                <i class="fas fa-file-excel me-1"></i>Template
+            </a>
+            <button onclick="document.getElementById('import-modal').style.display='flex'"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                    style="background:#eff6ff;color:#1F3C88;border-color:#1F3C88;"
+                    onmouseover="this.style.background='#1F3C88';this.style.color='#fff'"
+                    onmouseout="this.style.background='#eff6ff';this.style.color='#1F3C88'">
+                <i class="fas fa-upload me-1"></i>Import Excel
+            </button>
         </div>
-
-        @if(session('error'))
-        <div class="mb-3 px-3 py-2 rounded-lg text-xs font-bold text-white" style="background:#ef4444;">
-            {{ session('error') }}
+        
+        <!-- Filter tabs -->
+        <div class="flex items-center gap-2">
+            @foreach(['all'=>'All','pending'=>'Pending','approved'=>'Approved','rejected'=>'Rejected'] as $val=>$label)
+            <button onclick="setFilter('{{ $val }}')" data-filter="{{ $val }}"
+               class="filter-tab px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+               style="{{ $val === 'all' ? 'background:#1F3C88;color:#fff;border-color:#1F3C88;' : 'background:#fff;color:#6b7280;border-color:#e5e7eb;' }}">
+                {{ $label }}
+            </button>
+            @endforeach
         </div>
-        @endif
-
-        <form method="POST" action="{{ route('dashboard.super-admin.startups.import') }}" enctype="multipart/form-data">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-xs font-extrabold mb-1.5" style="color:#374151;">Select Excel / CSV File</label>
-                <input type="file" name="file" accept=".xlsx,.xls,.csv" required
-                       style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;outline:none;">
-                <p class="text-xs mt-1" style="color:#9ca3af;">Accepted: .xlsx, .xls, .csv — Max 10MB</p>
-            </div>
-            <div class="flex items-center gap-2 justify-end">
-                <button type="button" onclick="document.getElementById('startup-import-modal').style.display='none'"
-                        class="px-4 py-2 rounded-lg text-xs font-bold border"
-                        style="background:#fff;color:#6b7280;border-color:#e5e7eb;">Cancel</button>
-                <button type="submit"
-                        class="px-4 py-2 rounded-lg text-xs font-bold text-white"
-                        style="background:#1F3C88;border:none;cursor:pointer;"
-                        onmouseover="this.style.background='#162d6e'" onmouseout="this.style.background='#1F3C88'">&#11121; Import</button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -107,10 +64,9 @@
 </div>
 @endif
 
-<!-- Search + Domain Filter -->
-<div class="mb-5 flex items-start gap-3 flex-wrap">
-    <!-- Search -->
-    <div class="relative" style="min-width:260px;">
+<!-- Search -->
+<div class="mb-5">
+    <div class="relative max-w-sm">
         <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style="color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
@@ -119,21 +75,6 @@
             onfocus="this.style.borderColor='#1F3C88'" onblur="this.style.borderColor='#e5e7eb'">
         <span id="clear-btn" onclick="clearSearch()"
            style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:18px;cursor:pointer;">×</span>
-    </div>
-
-    <!-- Domain filter dropdown -->
-    <div class="relative">
-        <select id="domain-select" onchange="setDomain(this.value)"
-            style="border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 36px 9px 12px;font-size:13px;font-weight:600;outline:none;color:#374151;background:#fff;appearance:none;cursor:pointer;min-width:180px;"
-            onfocus="this.style.borderColor='#1F3C88'" onblur="this.style.borderColor='#e5e7eb'">
-            <option value="">All Domains</option>
-            @foreach($domains as $domain)
-            <option value="{{ $domain->name }}">{{ $domain->name }}</option>
-            @endforeach
-        </select>
-        <svg class="w-4 h-4 pointer-events-none" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
     </div>
 </div>
 
@@ -166,22 +107,71 @@
     </div>
 </div>
 
+<!-- Import Modal -->
+<div id="import-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:2rem;max-width:500px;width:90%;">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold" style="color:#0d1b2a;">Import Startup Profiles</h3>
+            <button onclick="document.getElementById('import-modal').style.display='none'" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ route('dashboard.super-admin.startups.import') }}" enctype="multipart/form-data">
+            @csrf
+            <div class="mb-4">
+                <label class="block text-sm font-semibold mb-2" style="color:#374151;">Select Excel File</label>
+                <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Supported formats: .xlsx, .xls, .csv (Max: 10MB)</p>
+            </div>
+            
+            <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+                <h4 class="text-sm font-semibold text-blue-800 mb-2">Import Notes:</h4>
+                <ul class="text-xs text-blue-700 space-y-1">
+                    <li>• Download the template first to see the required format</li>
+                    <li>• Users will be created with email as founder_email</li>
+                    <li>• Default password: "12345678" (users need OTP verification)</li>
+                    <li>• Declaration and approval status set to true by default</li>
+                    <li>• Co-founders should be in JSON format if provided</li>
+                    <li>• Dates should be in YYYY-MM-DD format</li>
+                </ul>
+                <div class="mt-2">
+                    <a href="{{ route('dashboard.super-admin.startups.template') }}" 
+                       class="text-xs font-semibold text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-download me-1"></i>Download Template
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-upload me-2"></i>Import Data
+                </button>
+                <button type="button" onclick="document.getElementById('import-modal').style.display='none'"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 const SEARCH_URL = '{{ route("dashboard.super-admin.startups.search") }}';
 let currentFilter = '{{ session("filter", "all") }}';
-let currentDomain = '';
 let currentPage   = 1;
 let searchTimer   = null;
 
+// Set initial filter state if passed from session
 document.addEventListener('DOMContentLoaded', function() {
     if (currentFilter !== 'all') {
         setFilter(currentFilter);
     } else {
         fetchData();
     }
-    @if(session('error'))
-    document.getElementById('startup-import-modal').style.display = 'flex';
-    @endif
 });
 
 function setFilter(filter) {
@@ -193,12 +183,6 @@ function setFilter(filter) {
         btn.style.color         = active ? '#fff'    : '#6b7280';
         btn.style.borderColor   = active ? '#1F3C88' : '#e5e7eb';
     });
-    fetchData();
-}
-
-function setDomain(domain) {
-    currentDomain = domain;
-    currentPage   = 1;
     fetchData();
 }
 
@@ -218,7 +202,7 @@ document.getElementById('search-input').addEventListener('input', function () {
 
 function fetchData() {
     const q = document.getElementById('search-input').value;
-    const params = new URLSearchParams({ q, filter: currentFilter, domain: currentDomain, page: currentPage });
+    const params = new URLSearchParams({ q, filter: currentFilter, page: currentPage });
 
     document.getElementById('startups-tbody').innerHTML =
         '<tr><td colspan="8" class="py-16 text-center text-xs font-semibold" style="color:#6b7280;">Loading...</td></tr>';

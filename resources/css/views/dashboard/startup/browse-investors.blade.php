@@ -141,12 +141,12 @@
             @else
             <span class="text-xs font-semibold" style="color:#9ca3af;">No website</span>
             @endif
-            <a href="{{ route('dashboard.startup.investors.show', encrypt($investor->id)) }}"
+            <a href="mailto:{{ $investor->fund_email }}"
                class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
                style="background:#eff6ff;color:#1F3C88;"
                onmouseover="this.style.background='#1F3C88';this.style.color='#fff'"
                onmouseout="this.style.background='#eff6ff';this.style.color='#1F3C88'">
-                View more →
+                Connect →
             </a>
         </div>
     </div>

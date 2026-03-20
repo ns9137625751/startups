@@ -91,4 +91,14 @@ class InvestorController extends Controller
                 ? 'Your investor profile has been updated successfully.'
                 : 'Your investor profile has been submitted for approval!');
     }
+
+    public function showStartups(string $hash)
+    {
+        $id = decrypt($hash);
+        $startup = StartupProfile::findOrFail($id);
+        abort_unless($startup->can_approved, 404);
+        $startup->load('user');
+        $domainMap = Domain::pluck('name', 'id');
+        return view('dashboard.investor.show-startup', compact('startup', 'domainMap'));
+    }
 }

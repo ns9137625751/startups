@@ -14,7 +14,9 @@
     </a>
     <div>
         <h1 class="text-2xl font-extrabold" style="color:#0d1b2a;">Browse Startups</h1>
-       
+        <p class="text-sm font-semibold mt-0.5" style="color:#4b5563;">
+            {{ $startups->total() }} approved startup{{ $startups->total() !== 1 ? 's' : '' }} in the ecosystem
+        </p>
     </div>
 </div>
 
@@ -108,12 +110,12 @@
                         ₹{{ number_format($startup->capital_seeking / 100000, 1) }}L
                     </p>
                 </div>
-                <a href="{{ route('dashboard.investor.startups.show', encrypt($startup->id)) }}"
+                <a href="mailto:{{ $startup->founder_email }}"
                    class="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
                    style="background:#f0fdf4;color:#57BD68;"
                    onmouseover="this.style.background='#57BD68';this.style.color='#fff'"
                    onmouseout="this.style.background='#f0fdf4';this.style.color='#57BD68'">
-                    More details →
+                    Connect →
                 </a>
             </div>
         </div>
