@@ -23,7 +23,7 @@ return new class extends Migration {
             $table->string('partner_mobile_number');
 
             // Investment info
-            $table->decimal('ticket_size', 15, 2);                // in INR
+            $table->string('ticket_size')->default('N/A');          // e.g. ₹44 lakh to ₹88 crore
             $table->json('investment_sectors');                    // array of domain IDs
 
             // Portfolio

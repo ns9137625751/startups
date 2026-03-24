@@ -2,98 +2,120 @@
 
 namespace App\Imports;
 
+use App\Models\Domain;
 use App\Models\InvestorProfile;
 use App\Models\User;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithValidation;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
+use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\SkipsErrors;
 
-class InvestorProfilesImport implements ToCollection, WithHeadingRow, WithValidation
+class InvestorProfilesImport implements ToModel, WithStartRow, SkipsEmptyRows, SkipsOnError
 {
-    public function collection(Collection $rows)
+    use SkipsErrors;
+
+    // Start from row 2 (row 1 is the heading)
+    public function startRow(): int
     {
-        foreach ($rows as $row) {
-            // Create or find user
+        return 2;
+    }
+
+    public function model(array $row)
+    {
+        $fundName  = $this->val($row[0] ?? null);
+        $fundEmail = $this->val($row[1] ?? null);
+
+        // Skip if only truly required fields are missing
+        if (!$fundName || !$fundEmail) {
+            return null;
+        }
+
+        $city  = $this->val($row[12] ?? null) ?? 'N/A';
+        $state = $this->val($row[13] ?? null) ?? 'N/A';
+
+        try {
             $user = User::firstOrCreate(
-                ['email' => $row['fund_email']],
+                ['email' => $fundEmail],
                 [
-                    'name' => $row['fund_name'],
-                    'password' => Hash::make('12345678'),
-                    'role' => 'investor',
+                    'name'        => $fundName,
+                    'password'    => Hash::make('12345678'),
+                    'role'        => 'investor',
                     'is_verified' => false,
                 ]
             );
 
-            // Prepare investor profile data
+            // If user already has an investor profile, skip
+            if (InvestorProfile::where('user_id', $user->id)->exists()) {
+                return null;
+            }
+
             $investorData = [
-                'user_id' => $user->id,
-                'fund_name' => $row['fund_name'],
-                'fund_email' => $row['fund_email'],
-                'fund_mobile_number' => $row['fund_mobile_number'],
-                'fund_brief' => $row['fund_brief'],
-                'partner_name' => $row['partner_name'],
-                'partner_email' => $row['partner_email'],
-                'partner_mobile_number' => $row['partner_mobile_number'],
-                'ticket_size' => (float) ($row['ticket_size'] ?? 0),
-                'investment_sectors' => $this->parseInvestmentSectors($row['investment_sectors'] ?? null),
-                'portfolio_companies' => $row['portfolio_companies'] ?? null,
-                'logo' => $row['logo'] ?? null,
-                'founder_img' => $row['founder_img'] ?? null,
-                'city' => $row['city'],
-                'state' => $row['state'],
-                'website' => $row['website'] ?? null,
-                'can_approved' => 1, // Default to approved
+                'user_id'               => $user->id,
+                'fund_name'             => $fundName,
+                'fund_email'            => $fundEmail,
+                'fund_mobile_number'    => $this->val($row[2] ?? null) ?? 'N/A',
+                'fund_brief'            => $this->val($row[3] ?? null) ?? 'N/A',
+                'partner_name'          => $this->val($row[4] ?? null) ?? 'N/A',
+                'partner_email'         => $this->val($row[5] ?? null) ?? $fundEmail,
+                'partner_mobile_number' => $this->val($row[6] ?? null) ?? 'N/A',
+                'ticket_size'           => $this->val($row[7] ?? null) ?? 'N/A',
+                'investment_sectors'    => $this->parseSectors($row[8] ?? null),
+                'portfolio_companies'   => $this->val($row[9] ?? null),
+                'logo'                  => null,
+                'founder_img'           => null,
+                'city'                  => $city,
+                'state'                 => $state,
+                'website'               => $this->val($row[14] ?? null),
+                'can_approved'          => 1,
             ];
 
-            // Create or update investor profile
-            InvestorProfile::updateOrCreate(
-                ['user_id' => $user->id],
-                $investorData
-            );
+            return InvestorProfile::create($investorData);
+
+        } catch (\Exception $e) {
+            Log::error('InvestorProfilesImport row failed: ' . $e->getMessage(), ['row' => $row]);
+            return null;
         }
     }
 
-    private function parseInvestmentSectors($sectorsData)
+    private function val($value): ?string
     {
-        if (empty($sectorsData)) {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+        return trim((string) $value);
+    }
+
+    private function parseSectors($data): array
+    {
+        $str = trim((string) ($data ?? ''));
+
+        if ($str === '') {
             return [];
         }
 
-        // If it's already JSON, decode it
-        if (is_string($sectorsData) && $this->isJson($sectorsData)) {
-            return json_decode($sectorsData, true);
+        // Already a JSON array of IDs e.g. [1,2,3]
+        $decoded = json_decode($str, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return array_map('intval', $decoded);
         }
 
-        // If it's comma-separated values, convert to array of integers
-        if (is_string($sectorsData)) {
-            $sectors = explode(',', $sectorsData);
-            return array_map('intval', array_filter(array_map('trim', $sectors)));
+        // Plain text names — may be newline-separated or comma-separated
+        // Split on newlines first, then fallback to commas
+        $parts = preg_split('/\r\n|\r|\n/', $str);
+        if (count($parts) === 1) {
+            $parts = explode(',', $str);
         }
-
-        return [];
-    }
-
-    private function isJson($string)
-    {
-        json_decode($string);
-        return json_last_error() === JSON_ERROR_NONE;
-    }
-
-    public function rules(): array
-    {
-        return [
-            'fund_name' => 'required|string',
-            'fund_email' => 'required|email',
-            'fund_mobile_number' => 'required|string',
-            'fund_brief' => 'required|string',
-            'partner_name' => 'required|string',
-            'partner_email' => 'required|email',
-            'partner_mobile_number' => 'required|string',
-            'ticket_size' => 'required|numeric|min:0',
-            'city' => 'required|string',
-            'state' => 'required|string',
-        ];
+        $ids = [];
+        foreach ($parts as $part) {
+            // Strip HTML entities, extra whitespace
+            $name = trim(html_entity_decode(preg_replace('/\s+/', ' ', $part)));
+            if ($name === '') continue;
+            $domain = Domain::firstOrCreate(['name' => $name]);
+            $ids[]  = $domain->id;
+        }
+        return $ids;
     }
 }

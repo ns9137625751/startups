@@ -255,7 +255,7 @@ function renderTable(data) {
                             onmouseover="this.style.background='#ef4444';this.style.color='#fff'"
                             onmouseout="this.style.background='#fef2f2';this.style.color='#ef4444'">&#128465; Delete</button>
                     </form>
-                    ${r.approveBtn}
+                    ${r.canApprove ? `<button onclick="approveInvestor('${r.approveUrl}','${r.csrf}')" class="px-2.5 py-1 rounded-lg text-xs font-bold" style="background:#dcfce7;color:#16a34a;border:none;cursor:pointer;" onmouseover="this.style.background='#16a34a';this.style.color='#fff'" onmouseout="this.style.background='#dcfce7';this.style.color='#16a34a'">&#10004; Approve</button>` : ''}
                 </div>
             </td>
         </tr>`).join('');
@@ -285,6 +285,17 @@ function renderPagination(data) {
 }
 
 function goPage(page) { currentPage = page; fetchData(); }
+
+function approveInvestor(url, csrf) {
+    fetch(url, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: '_token=' + encodeURIComponent(csrf) + '&status=1'
+    })
+    .then(r => r.json())
+    .then(() => fetchData())
+    .catch(() => alert('Approval failed. Please try again.'));
+}
 </script>
 
 @endsection

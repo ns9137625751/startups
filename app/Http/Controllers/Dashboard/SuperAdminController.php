@@ -196,7 +196,7 @@ class SuperAdminController extends Controller
     public function importStartups(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
         ]);
 
         try {
@@ -204,6 +204,7 @@ class SuperAdminController extends Controller
             return redirect()->route('dashboard.super-admin.startups')
                 ->with('success', 'Startup profiles imported successfully!');
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Startup import failed: ' . $e->getMessage());
             return redirect()->route('dashboard.super-admin.startups')
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
@@ -269,10 +270,11 @@ class SuperAdminController extends Controller
                 'partner_name' => e($p->partner_name),
                 'fund_email'   => e($p->fund_email),
                 'fund_mobile'  => e($p->fund_mobile_number),
-                'ticket_size'  => '₹' . number_format($p->ticket_size / 100000, 1) . 'L',
+                'ticket_size'  => e($p->ticket_size),
                 'sectors'      => e($sectors ?: '—'),
                 'badge' => $badge, 'showUrl' => $showUrl, 'editUrl' => $editUrl,
-                'deleteUrl' => $deleteUrl, 'approveBtn' => $approveBtn, 'csrf' => $csrf,
+                'deleteUrl' => $deleteUrl, 'canApprove' => $p->can_approved == 0,
+                'approveUrl' => $approveUrl, 'csrf' => $csrf,
             ];
         });
 
@@ -303,7 +305,7 @@ class SuperAdminController extends Controller
             'partner_name'           => 'required|string|max:255',
             'partner_email'          => 'required|email|max:255',
             'partner_mobile_number'  => 'required|string|max:20',
-            'ticket_size'            => 'required|numeric|min:0',
+            'ticket_size'            => 'required|string|max:255',
             'investment_sectors'     => 'required|array|min:1',
             'investment_sectors.*'   => 'integer|exists:domains,id',
             'portfolio_companies'    => 'nullable|string',
@@ -338,6 +340,9 @@ class SuperAdminController extends Controller
         $request->validate(['status' => 'required|in:0,1,2']);
         $investor->update(['can_approved' => $request->status]);
         $label = ['0' => 'Pending', '1' => 'Approved', '2' => 'Rejected'][$request->status];
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => "Investor marked as {$label}."]);
+        }
         return back()->with('success', "Investor marked as {$label}.");
     }
 
@@ -354,14 +359,16 @@ class SuperAdminController extends Controller
     public function importInvestors(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls,csv|max:10240', // 10MB max
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
         ]);
 
         try {
-            Excel::import(new InvestorProfilesImport, $request->file('file'));
+            $import = new InvestorProfilesImport;
+            Excel::import($import, $request->file('file'));
             return redirect()->route('dashboard.super-admin.investors')
                 ->with('success', 'Investor profiles imported successfully!');
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Investor import failed: ' . $e->getMessage());
             return redirect()->route('dashboard.super-admin.investors')
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }

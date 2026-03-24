@@ -82,7 +82,7 @@
     <div class="stat-card mb-4">
         <h2 class="text-sm font-extrabold mb-4 pb-2 border-b" style="color:#0d1b2a;border-color:#f3f4f6;">Investment Info</h2>
         <div class="grid gap-4 mb-4" style="grid-template-columns:repeat(2,1fr);">
-            {!! $input('Ticket Size (₹)', 'ticket_size', 'number') !!}
+            {!! $input('Ticket Size', 'ticket_size', 'text') !!}
             <div>
                 <label class="block text-xs font-bold mb-1" style="color:#4b5563;">Portfolio Companies</label>
                 <input type="text" name="portfolio_companies" value="{{ old('portfolio_companies', $investor->portfolio_companies) }}"
