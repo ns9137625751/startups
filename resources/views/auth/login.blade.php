@@ -27,9 +27,14 @@
         .eye-btn { position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#9ca3af; padding:2px; }
         .eye-btn:hover { color:#57BD68; }
         .role-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(87,189,104,0.15); color:#57BD68; border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600; margin:4px; }
+        .nav-link { position:relative; }
+        .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#57BD68; transition:width .2s; }
+        .nav-link:hover::after { width:100%; }
     </style>
 </head>
-<body class="min-h-screen flex" style="background:#F7F9FC;">
+<body class="min-h-screen" style="background:#F7F9FC;">
+
+@include('layouts.navbar')
 
 <div class="flex w-full min-h-screen">
 
@@ -65,7 +70,7 @@
 
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-4 mb-8">
-                @foreach([['10K+','Members'],['₹500Cr+','Funded'],['200+','Mentors']] as [$num,$label])
+                @foreach([['0','Members'],['0','Funded'],['0','Mentors']] as [$num,$label])
                 <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.06);">
                     <p class="text-xl font-bold text-white">{{ $num }}</p>
                     <p class="text-xs text-gray-400 mt-0.5">{{ $label }}</p>
@@ -75,7 +80,7 @@
 
             <!-- Role badges -->
             <div class="flex flex-wrap">
-                @foreach(['Startup','Investor','Mentor','Incubator','Government','Industry Expert'] as $r)
+                @foreach(['Startup','Investor','Mentor','Incubator','Industry Expert'] as $r)
                 <span class="role-badge">{{ $r }}</span>
                 @endforeach
             </div>
@@ -157,34 +162,6 @@
                 <button type="submit" class="btn-primary">Sign In →</button>
             </form>
 
-            <!-- Divider -->
-            <div class="flex items-center gap-3 my-6">
-                <div class="flex-1 h-px bg-gray-100"></div>
-                <span class="text-xs text-gray-400 font-medium">Demo Credentials</span>
-                <div class="flex-1 h-px bg-gray-100"></div>
-            </div>
-
-            <!-- Demo credentials quick-fill -->
-            <div class="rounded-xl p-4" style="background:#f8fafc; border:1px solid #e5e7eb;">
-                <p class="text-xs font-semibold text-gray-500 mb-3">Click to auto-fill demo account:</p>
-                <div class="grid grid-cols-2 gap-2">
-                    @foreach([
-                        ['Super Admin','admin@startupeco.in','Admin@1234','#FF8C42'],
-                        ['Startup','startup1@demo.com','Demo@1234','#57BD68'],
-                        ['Investor','investor1@demo.com','Demo@1234','#1F3C88'],
-                        ['Mentor','mentor1@demo.com','Demo@1234','#0d1b2a'],
-                        ['Incubator','incubator1@demo.com','Demo@1234','#57BD68'],
-                        ['Gov Body','governmentbody1@demo.com','Demo@1234','#1F3C88'],
-                    ] as [$label,$email,$pwd,$color])
-                    <button type="button" onclick="fillDemo('{{ $email }}','{{ $pwd }}')"
-                        class="text-left rounded-lg px-3 py-2 text-xs font-medium transition-all hover:shadow-sm"
-                        style="background:#fff; border:1px solid #e5e7eb; color:{{ $color }};">
-                        {{ $label }}
-                    </button>
-                    @endforeach
-                </div>
-                <p class="text-xs text-gray-400 mt-2">Password: <span class="font-mono font-semibold">Demo@1234</span> (Admin: <span class="font-mono font-semibold">Admin@1234</span>)</p>
-            </div>
 
             <p class="text-center text-xs text-gray-400 mt-6">
                 By signing in you agree to our

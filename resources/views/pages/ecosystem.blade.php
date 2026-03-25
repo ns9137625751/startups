@@ -48,10 +48,10 @@
 <section class="py-16 px-6 bg-white">
     <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-5">
         @foreach([
-            ['#57BD68', '10K+',  'Startups'],
-            ['#1F3C88', '2.5K+', 'Investors'],
-            ['#FF8C42', '500+',  'Incubators'],
-            ['#2F8F46', '150+',  'Gov. Programs'],
+            ['#57BD68', '0',  'Startups'],
+            ['#1F3C88', '0', 'Investors'],
+            ['#FF8C42', '0',  'Incubators'],
+            ['#2F8F46', '0',  'Gov. Programs'],
         ] as [$color, $num, $label])
         <div class="card p-6 text-center">
             <div class="text-2xl font-extrabold mb-1" style="color:{{ $color }};">{{ $num }}</div>

@@ -102,17 +102,12 @@ class InvestorProfilesImport implements ToModel, WithStartRow, SkipsEmptyRows, S
             return array_map('intval', $decoded);
         }
 
-        // Plain text names — may be newline-separated or comma-separated
-        // Split on newlines first, then fallback to commas
-        $parts = preg_split('/\r\n|\r|\n/', $str);
-        if (count($parts) === 1) {
-            $parts = explode(',', $str);
-        }
+        // Plain text names — split on newlines or commas
+        $parts = preg_split('/[\r\n,]+/', $str);
         $ids = [];
         foreach ($parts as $part) {
-            // Strip HTML entities, extra whitespace
             $name = trim(html_entity_decode(preg_replace('/\s+/', ' ', $part)));
-            if ($name === '') continue;
+            if ($name === '' || strtolower($name) === 'n/a') continue;
             $domain = Domain::firstOrCreate(['name' => $name]);
             $ids[]  = $domain->id;
         }

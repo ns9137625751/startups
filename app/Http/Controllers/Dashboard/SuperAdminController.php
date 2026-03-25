@@ -4,17 +4,23 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Exports\InvestorProfilesExport;
 use App\Exports\InvestorProfilesTemplateExport;
+use App\Exports\MentorProfilesTemplateExport;
 use App\Exports\StartupProfilesExport;
 use App\Exports\StartupProfilesTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\InvestorProfilesImport;
+use App\Imports\MentorProfilesImport;
 use App\Imports\StartupProfilesImport;
 use App\Models\Domain;
 use App\Models\InvestorProfile;
+use App\Models\MentorProfile;
 use App\Models\RoleSetting;
 use App\Models\StartupProfile;
 use App\Models\User;
+use App\Models\Contact;
+use App\Models\NewsletterSubscriber;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -30,9 +36,13 @@ class SuperAdminController extends Controller
         $pendingStartups  = StartupProfile::where('can_approved', 0)->count();
         $totalInvestors   = InvestorProfile::count();
         $pendingInvestors = InvestorProfile::where('can_approved', 0)->count();
+        $totalMentors     = MentorProfile::count();
+        $totalContacts    = Contact::count();
+        $totalSubscribers = NewsletterSubscriber::count();
         return view('dashboard.super-admin.index', compact(
             'roles', 'roleCounts', 'totalUsers', 'verified',
-            'totalStartups', 'pendingStartups', 'totalInvestors', 'pendingInvestors'
+            'totalStartups', 'pendingStartups', 'totalInvestors', 'pendingInvestors',
+            'totalMentors', 'totalContacts', 'totalSubscribers'
         ));
     }
 
@@ -50,7 +60,8 @@ class SuperAdminController extends Controller
         $filter  = $request->input('filter', 'all');
         $domain  = $request->input('domain', '');
         $page    = max(1, (int) $request->input('page', 1));
-        $perPage = 15;
+        $perPage = in_array((int) $request->input('perPage', 15), [15, 25, 50, 100])
+                    ? (int) $request->input('perPage', 15) : 15;
 
         $query = StartupProfile::with('user')
             ->when($filter === 'pending',  fn($q) => $q->where('can_approved', 0))
@@ -223,7 +234,8 @@ class SuperAdminController extends Controller
         $search  = $request->input('q', '');
         $filter  = $request->input('filter', 'all');
         $page    = max(1, (int) $request->input('page', 1));
-        $perPage = 15;
+        $perPage = in_array((int) $request->input('perPage', 15), [15, 25, 50, 100])
+                    ? (int) $request->input('perPage', 15) : 15;
 
         $domainId = $request->input('domain', '');
 
@@ -372,6 +384,146 @@ class SuperAdminController extends Controller
             return redirect()->route('dashboard.super-admin.investors')
                 ->with('error', 'Import failed: ' . $e->getMessage());
         }
+    }
+
+    // ── Mentor Profiles ───────────────────────────────────────────────────────
+
+    public function mentorProfiles()
+    {
+        return view('dashboard.super-admin.mentors');
+    }
+
+    public function mentorSearch(Request $request)
+    {
+        $search  = $request->input('q', '');
+        $filter  = $request->input('filter', 'all');
+        $page    = max(1, (int) $request->input('page', 1));
+        $perPage = in_array((int) $request->input('perPage', 15), [15, 25, 50, 100])
+                    ? (int) $request->input('perPage', 15) : 15;
+
+        $query = MentorProfile::query()
+            ->when($filter === 'pending',  fn($q) => $q->where('can_approved', 0))
+            ->when($filter === 'approved', fn($q) => $q->where('can_approved', 1))
+            ->when($filter === 'rejected', fn($q) => $q->where('can_approved', 2))
+            ->when($search, fn($q) => $q->where(function ($sub) use ($search) {
+                $sub->where('name',         'like', "%{$search}%")
+                    ->orWhere('email',        'like', "%{$search}%")
+                    ->orWhere('organization', 'like', "%{$search}%")
+                    ->orWhere('designation',  'like', "%{$search}%")
+                    ->orWhere('domain',       'like', "%{$search}%")
+                    ->orWhere('expertise',    'like', "%{$search}%");
+            }))
+            ->latest();
+
+        $total    = $query->count();
+        $profiles = $query->forPage($page, $perPage)->get();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $csrf     = csrf_token();
+
+        $domainMap = Domain::pluck('name', 'id');
+
+        $rows = $profiles->map(function ($p, $i) use ($page, $perPage, $csrf, $domainMap) {
+            $sr      = ($page - 1) * $perPage + $i + 1;
+            $initial = strtoupper(substr($p->name, 0, 1));
+            $badge   = $this->statusBadge($p->can_approved);
+
+            $domains = collect($p->domain ?? [])
+                ->map(fn($id) => $domainMap[$id] ?? null)->filter()->implode(', ');
+
+            $deleteUrl  = route('dashboard.super-admin.mentors.delete', $p);
+            $approveUrl = route('dashboard.super-admin.mentors.approve', $p);
+            $showUrl    = route('dashboard.super-admin.mentors.show', $p);
+
+            return [
+                'sr'           => $sr,
+                'initial'      => $initial,
+                'name'         => e($p->name),
+                'email'        => e($p->email),
+                'mobile'       => e($p->mobile_number),
+                'organization' => e($p->organization),
+                'designation'  => e($p->designation),
+                'domain'       => e($domains ?: '—'),
+                'expertise'    => e($p->expertise ?? '—'),
+                'badge'        => $badge,
+                'canApprove'   => $p->can_approved == 0,
+                'deleteUrl'    => $deleteUrl,
+                'approveUrl'   => $approveUrl,
+                'showUrl'      => $showUrl,
+                'csrf'         => $csrf,
+            ];
+        });
+
+        return response()->json(['rows' => $rows, 'total' => $total, 'page' => $page, 'lastPage' => $lastPage, 'perPage' => $perPage]);
+    }
+
+    public function showMentor(MentorProfile $mentor)
+    {
+        $domainMap = Domain::pluck('name', 'id');
+        return view('dashboard.super-admin.mentor-show', compact('mentor', 'domainMap'));
+    }
+
+    public function deleteMentor(MentorProfile $mentor)
+    {
+        $mentor->delete();
+        return redirect()->route('dashboard.super-admin.mentors')->with('success', 'Mentor deleted successfully.');
+    }
+
+    public function approveMentor(Request $request, MentorProfile $mentor)
+    {
+        $request->validate(['status' => 'required|in:0,1,2']);
+        $mentor->update(['can_approved' => $request->status]);
+        $label = ['0' => 'Pending', '1' => 'Approved', '2' => 'Rejected'][$request->status];
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => "Mentor marked as {$label}."]);
+        }
+        return back()->with('success', "Mentor marked as {$label}.");
+    }
+
+    public function importMentors(Request $request)
+    {
+        $request->validate(['file' => 'required|mimes:xlsx,xls,csv|max:10240']);
+        try {
+            Excel::import(new MentorProfilesImport, $request->file('file'));
+            return redirect()->route('dashboard.super-admin.mentors')
+                ->with('success', 'Mentor profiles imported successfully!');
+        } catch (\Exception $e) {
+            Log::error('Mentor import failed: ' . $e->getMessage());
+            return redirect()->route('dashboard.super-admin.mentors')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
+    }
+
+    public function exportMentorsTemplate()
+    {
+        return Excel::download(new MentorProfilesTemplateExport, 'mentor-profiles-template.xlsx');
+    }
+
+    // ── Contacts ──────────────────────────────────────────────────────────────
+
+    public function contacts()
+    {
+        $contacts = Contact::latest()->paginate(20);
+        return view('dashboard.super-admin.contacts', compact('contacts'));
+    }
+
+    public function deleteContact($id)
+    {
+        Contact::findOrFail($id)->delete();
+        return back()->with('success', 'Contact message deleted.');
+    }
+
+    // ── Subscribers ───────────────────────────────────────────────────────────
+
+    public function subscribers()
+    {
+        $subscribers = NewsletterSubscriber::latest()->paginate(20);
+        return view('dashboard.super-admin.subscribers', compact('subscribers'));
+    }
+
+    public function deleteSubscriber($id)
+    {
+        NewsletterSubscriber::findOrFail($id)->delete();
+        return back()->with('success', 'Subscriber removed.');
     }
 
     // ── Roles & Users ─────────────────────────────────────────────────────────

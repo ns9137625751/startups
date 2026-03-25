@@ -25,7 +25,7 @@ $roleColors = [
     </div>
 </div>
 
-<div class="grid gap-4 mb-5" style="grid-template-columns: repeat(4, 1fr);">
+<div class="grid gap-4 mb-5" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
     <a href="{{ route('dashboard.super-admin.users-page', ['filter' => 'all']) }}"
        class="stat-card block no-underline hover-card" style="border-left:3px solid #57BD68;">
         <div class="flex items-center justify-between mb-2">
@@ -82,19 +82,48 @@ $roleColors = [
         <p class="text-xs font-bold mt-1" style="color:#FF8C42;">View all investors →</p>
     </a>
 
-    {{-- <a href="{{ route('dashboard.super-admin.startups', ['filter'=>'pending']) }}"
-       class="stat-card block no-underline hover-card" style="border-left:3px solid #FF8C42;">
+    <a href="{{ route('dashboard.super-admin.mentors') }}"
+       class="stat-card block no-underline hover-card" style="border-left:3px solid #9333ea;">
         <div class="flex items-center justify-between mb-2">
-            <p class="text-xs font-bold" style="color:#4b5563;">Pending Approval</p>
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fff7ed;">
-                <svg class="w-4 h-4" style="color:#FF8C42;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <p class="text-xs font-bold" style="color:#4b5563;">Total Mentors</p>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f3e8ff;">
+                <svg class="w-4 h-4" style="color:#9333ea;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422A12.083 12.083 0 0121 12c0 2.21-4.03 4-9 4s-9-1.79-9-4a12.083 12.083 0 012.84-1.422L12 14z"/>
                 </svg>
             </div>
         </div>
-        <p class="text-3xl font-extrabold" style="color:#FF8C42;">{{ $pendingStartups }}</p>
-        <p class="text-xs font-bold mt-1" style="color:#FF8C42;">Review pending →</p>
-    </a> --}}
+        <p class="text-3xl font-extrabold" style="color:#9333ea;">{{ $totalMentors }}</p>
+        <p class="text-xs font-bold mt-1" style="color:#9333ea;">View all mentors →</p>
+    </a>
+
+    <a href="{{ route('dashboard.super-admin.contacts') }}"
+       class="stat-card block no-underline hover-card" style="border-left:3px solid #0284c7;">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold" style="color:#4b5563;">Contact Messages</p>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#e0f2fe;">
+                <svg class="w-4 h-4" style="color:#0284c7;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold" style="color:#0284c7;">{{ $totalContacts }}</p>
+        <p class="text-xs font-bold mt-1" style="color:#0284c7;">View messages →</p>
+    </a>
+
+    <a href="{{ route('dashboard.super-admin.subscribers') }}"
+       class="stat-card block no-underline hover-card" style="border-left:3px solid #57BD68;">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-bold" style="color:#4b5563;">Subscribers</p>
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#f0fdf4;">
+                <svg class="w-4 h-4" style="color:#57BD68;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+            </div>
+        </div>
+        <p class="text-3xl font-extrabold" style="color:#57BD68;">{{ $totalSubscribers }}</p>
+        <p class="text-xs font-bold mt-1" style="color:#57BD68;">View subscribers →</p>
+    </a>
 </div>
 
 {{-- <p class="text-xs font-bold uppercase tracking-wider mb-3" style="color:#6b7280;">Quick Actions</p>

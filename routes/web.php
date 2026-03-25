@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\SubscriberController;
 use App\Http\Controllers\Dashboard\GovernmentController;
 use App\Http\Controllers\Dashboard\IncubatorController;
 use App\Http\Controllers\Dashboard\IndustryExpertController;
@@ -23,6 +24,7 @@ Route::get('/resources', [PageController::class, 'resources']);
 Route::get('/faq', [PageController::class, 'faq']);
 Route::get('/contact', [PageController::class, 'contact']);
 Route::post('/contact', [ContactController::class, 'store']);
+Route::post('/subscribe', [SubscriberController::class, 'store'])->name('subscribe');
 
 // ── Auth routes (guests only) ─────────────────────────────────────────────────
 Route::middleware('guest')->group(function () {
@@ -70,6 +72,19 @@ Route::middleware(['auth', 'verified.otp'])->prefix('dashboard')->name('dashboar
         Route::get('/investors-export',              [SuperAdminController::class, 'exportInvestors'])->name('investors.export');
         Route::get('/investors-template',            [SuperAdminController::class, 'exportInvestorsTemplate'])->name('investors.template');
         Route::post('/investors-import',             [SuperAdminController::class, 'importInvestors'])->name('investors.import');
+        // Mentor profiles management
+        Route::get('/mentors',                    [SuperAdminController::class, 'mentorProfiles'])->name('mentors');
+        Route::get('/mentors-search',             [SuperAdminController::class, 'mentorSearch'])->name('mentors.search');
+        Route::get('/mentors/{mentor}',           [SuperAdminController::class, 'showMentor'])->name('mentors.show');
+        Route::delete('/mentors/{mentor}',        [SuperAdminController::class, 'deleteMentor'])->name('mentors.delete');
+        Route::post('/mentors/{mentor}/approve',  [SuperAdminController::class, 'approveMentor'])->name('mentors.approve');
+        Route::post('/mentors-import',            [SuperAdminController::class, 'importMentors'])->name('mentors.import');
+        Route::get('/mentors-template',           [SuperAdminController::class, 'exportMentorsTemplate'])->name('mentors.template');
+        // Contacts & Subscribers
+        Route::get('/contacts',     [SuperAdminController::class, 'contacts'])->name('contacts');
+        Route::delete('/contacts/{id}', [SuperAdminController::class, 'deleteContact'])->name('contacts.delete');
+        Route::get('/subscribers',  [SuperAdminController::class, 'subscribers'])->name('subscribers');
+        Route::delete('/subscribers/{id}', [SuperAdminController::class, 'deleteSubscriber'])->name('subscribers.delete');
     });
 
     // ── Startup ───────────────────────────────────────────────────────────────

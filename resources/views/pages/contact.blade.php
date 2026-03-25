@@ -43,9 +43,9 @@
 
             <div class="grid grid-cols-2 gap-3">
                 @foreach([
-                    ['#57BD68', '< 24hrs', 'Response Time'],
-                    ['#1F3C88', '10K+',    'Community Members'],
-                    ['#FF8C42', '50+',     'Countries'],
+                    ['#57BD68', '0', 'Response Time'],
+                    ['#1F3C88', '0',    'Community Members'],
+                    ['#FF8C42', '0',     'Countries'],
                     ['#2F8F46', 'Free',    'To Join'],
                 ] as [$color, $num, $label])
                 <div class="card p-4 text-center bg-white">

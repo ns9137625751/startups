@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contact;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ContactController extends Controller
 {
@@ -15,13 +15,11 @@ class ContactController extends Controller
             'message' => 'required|string',
         ]);
 
-        DB::table('contacts')->insert([
+        Contact::create([
             'name'         => $request->name,
             'email'        => $request->email,
             'organization' => $request->organization,
             'message'      => $request->message,
-            'created_at'   => now(),
-            'updated_at'   => now(),
         ]);
 
         return back()->with('success', 'Thank you! Your message has been sent. We will get back to you soon.');

@@ -131,6 +131,19 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
     </div>
+
+    <!-- Per page -->
+    <div class="flex items-center gap-2 ml-auto">
+        <span class="text-xs font-semibold" style="color:#6b7280;">Rows per page:</span>
+        <select id="per-page-select" onchange="setPerPage(this.value)"
+            style="border:1.5px solid #e5e7eb;border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600;outline:none;color:#374151;background:#fff;cursor:pointer;"
+            onfocus="this.style.borderColor='#1F3C88'" onblur="this.style.borderColor='#e5e7eb'">
+            <option value="15">15</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+    </div>
 </div>
 
 <div class="bg-white border rounded-xl overflow-hidden" style="border-color:#e5e7eb;">
@@ -161,15 +174,25 @@
 </div>
 
 <script>
-const SEARCH_URL = '{{ route("dashboard.super-admin.investors.search") }}';
-let currentFilter = 'all', currentDomain = '', currentPage = 1, searchTimer = null;
+const SEARCH_URL   = '{{ route("dashboard.super-admin.investors.search") }}';
+const LS_KEY       = 'sa_investors_perPage';
+let currentFilter  = 'all', currentDomain = '', currentPage = 1, searchTimer = null;
+let currentPerPage = parseInt(localStorage.getItem(LS_KEY)) || 15;
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('per-page-select').value = currentPerPage;
     @if(session('error'))
     document.getElementById('investor-import-modal').style.display = 'flex';
     @endif
     fetchData();
 });
+
+function setPerPage(val) {
+    currentPerPage = parseInt(val);
+    localStorage.setItem(LS_KEY, currentPerPage);
+    currentPage = 1;
+    fetchData();
+}
 
 function setFilter(filter) {
     currentFilter = filter; currentPage = 1;
@@ -202,7 +225,7 @@ document.getElementById('search-input').addEventListener('input', function () {
 
 function fetchData() {
     const q = document.getElementById('search-input').value;
-    const params = new URLSearchParams({ q, filter: currentFilter, domain: currentDomain, page: currentPage });
+    const params = new URLSearchParams({ q, filter: currentFilter, domain: currentDomain, page: currentPage, perPage: currentPerPage });
     document.getElementById('investors-tbody').innerHTML =
         '<tr><td colspan="9" class="py-16 text-center text-xs font-semibold" style="color:#6b7280;">Loading...</td></tr>';
     fetch(SEARCH_URL + '?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })

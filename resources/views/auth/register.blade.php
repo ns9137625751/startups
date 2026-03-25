@@ -134,10 +134,16 @@
         .step-dot.active {
             background: #57BD68;
         }
+
+        .nav-link { position: relative; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: #57BD68; transition: width .2s; }
+        .nav-link:hover::after { width: 100%; }
     </style>
 </head>
 
-<body class="min-h-screen flex" style="background:#F7F9FC;">
+<body class="min-h-screen" style="background:#F7F9FC;">
+
+@include('layouts.navbar')
 
     <div class="flex w-full min-h-screen">
 
